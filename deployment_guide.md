@@ -1,34 +1,29 @@
 # Guía de Despliegue - PocketTube Backend
 
-Para que el backend funcione, el servidor debe tener instalado `yt-dlp`. 
+Para que el backend funcione, el servidor debe tener instalado `yt-dlp` y `ffmpeg`. Usaremos **Docker** para asegurar que todo esté listo en la nube.
 
-## 1. Instalación de `yt-dlp` (Local)
-Si quieres probarlo en tu PC:
-- **Windows**: Descarga el `.exe` de [yt-dlp](https://github.com/yt-dlp/yt-dlp) y agrégalo al PATH.
-- **Mac/Linux**: `sudo curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp && sudo chmod a+rx /usr/local/bin/yt-dlp`
+## 1. Instalación Local (Opcional)
+- **Windows**: Descarga `yt-dlp.exe` y `ffmpeg` y agrégalos al PATH.
 
-## 2. Despliegue en Railway
-Railway usa **Nixpacks** por defecto, lo cual facilita la instalación de dependencias del sistema.
+## 2. Despliegue en Render (GRATIS)
+Render permite desplegar contenedores Docker de forma gratuita.
 
-1. Sube tu carpeta `backend/` a un repo de GitHub.
-2. En Railway, crea un "New Project" -> "Deploy from GitHub repo".
-3. En la configuración del servicio, ve a **Variables** y agrega:
-   - `PORT`: 3000 (o el que prefieras)
-4. Para instalar `yt-dlp` automáticamente, crea un archivo llamado `nixpacks.toml` en la raíz de la carpeta `backend/`:
-
-```toml
-[phases.setup]
-nixPkgs = ["...", "python3", "ffmpeg", "yt-dlp"]
-```
-*(Nota: Nixpacks suele incluir yt-dlp si lo pones en nixPkgs)*.
+1. **Subir a GitHub**: Sube la carpeta `backend/` a un repositorio de GitHub (asegúrate de que el `Dockerfile` esté en la raíz de esa carpeta).
+2. **Crear Web Service**:
+   - Ve a [Dashboard de Render](https://dashboard.render.com/).
+   - Click en **New** -> **Web Service**.
+   - Conecta tu repositorio de GitHub.
+   - **Root Directory**: `backend` (importante).
+   - **Runtime**: `Docker`.
+3. **Configuración**:
+   - **Instance Type**: `Free`.
+   - **Environment Variables**:
+     - `PORT`: `3000`
+4. **URL**: Una vez desplegado, Render te dará una URL (ej: `https://tube-backend.onrender.com`).
 
 ## 3. Configuración en la App
-Una vez tengas la URL de Railway (ej: `https://pockettube-production.up.railway.app`):
 1. Ve a `src/services/api.js`.
-2. Cambia `YOUR_BACKEND_URL` por tu URL de Railway.
+2. Cambia `BASE_URL` por tu URL de Render.
 
-## 4. Dependencias del Frontend
-Asegúrate de instalar estas librerías en tu proyecto Expo:
-```bash
-npx expo install expo-router expo-file-system expo-av react-native-safe-area-context react-native-screens
-```
+> [!NOTE]
+> En el plan gratuito de Render, el servidor se "apaga" tras 15 min de inactividad. La primera descarga después de un tiempo puede tardar un poco más en iniciar mientras el servidor arranca.
