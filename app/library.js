@@ -40,6 +40,28 @@ export default function Library() {
     );
   };
 
+  const clearLibrary = async () => {
+    if (files.length === 0) return;
+    
+    Alert.alert(
+      'Limpiar Librería',
+      '¿Estás seguro de que quieres borrar TODAS las descargas?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Borrar Todo', 
+          style: 'destructive',
+          onPress: async () => {
+            for (const file of files) {
+              await FileSystem.deleteAsync(FileSystem.documentDirectory + file);
+            }
+            loadFiles();
+          }
+        },
+      ]
+    );
+  };
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -60,6 +82,11 @@ export default function Library() {
           </View>
         )}
         ListEmptyComponent={<Text style={styles.emptyText}>No hay descargas aún.</Text>}
+        ListFooterComponent={files.length > 0 ? (
+          <TouchableOpacity style={styles.clearBtn} onPress={clearLibrary}>
+            <Text style={styles.clearText}>Vaciar Librería</Text>
+          </TouchableOpacity>
+        ) : null}
       />
     </View>
   );
@@ -82,4 +109,13 @@ const styles = StyleSheet.create({
   deleteBtn: { padding: 10 },
   deleteText: { fontSize: 20 },
   emptyText: { color: '#888', textAlign: 'center', marginTop: 50, fontSize: 16 },
+  clearBtn: {
+    marginTop: 20,
+    backgroundColor: '#333',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  clearText: { color: '#ff4444', fontWeight: 'bold' },
 });

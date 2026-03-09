@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 
-const BASE_URL = 'http://YOUR_BACKEND_URL'; // Replace with Railway URL after deploy
+const BASE_URL = 'http://192.168.1.10:3000'; // Replace with your computer's IP for local testing, or Render URL for production
 
 export const getVideoInfo = async (url) => {
   try {
@@ -13,13 +13,13 @@ export const getVideoInfo = async (url) => {
   }
 };
 
-export const downloadFile = async (url, format, onProgress) => {
+export const downloadFile = async (url, format, title, onProgress) => {
   const isAudio = format === 'mp3';
   const fileName = `PocketTube_${Date.now()}.${isAudio ? 'mp3' : 'mp4'}`;
   const fileUri = FileSystem.documentDirectory + fileName;
 
   const downloadResumable = FileSystem.createDownloadResumable(
-    `${BASE_URL}/download?url=${encodeURIComponent(url)}&format=${format}`,
+    `${BASE_URL}/download?url=${encodeURIComponent(url)}&format=${format}&title=${encodeURIComponent(title || '')}`,
     fileUri,
     {},
     (downloadProgress) => {

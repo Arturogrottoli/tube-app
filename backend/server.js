@@ -56,10 +56,17 @@ app.get('/info', (req, res) => {
 
 // Endpoint to download audio or video
 app.get('/download', (req, res) => {
-    const { url, format } = req.query;
+    const { url, format, title } = req.query;
     if (!url) return res.status(400).send('URL is required');
 
     const isAudio = format === 'mp3';
+    const extension = isAudio ? 'mp3' : 'mp4';
+    
+    // Sanitize title for filename
+    const safeTitle = (title || 'download')
+        .replace(/[^\w\s-]/gi, '') // Remove special characters
+        .trim();
+    
     const args = [
         '--no-playlist',
         '-o', '-', // output to stdout
@@ -74,24 +81,34 @@ app.get('/download', (req, res) => {
 
     const ytDlp = spawn('yt-dlp', args);
 
-    res.setHeader('Content-Disposition', `attachment; filename="download.${isAudio ? 'mp3' : 'mp4'}"`);
+    // Set headers
+    res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.${extension}"`);
     res.setHeader('Content-Type', isAudio ? 'audio/mpeg' : 'video/mp4');
 
+    // Pipe the output to the response
     ytDlp.stdout.pipe(res);
 
+    let errorCaptured = '';
     ytDlp.stderr.on('data', (data) => {
+        errorCaptured += data.toString();
         // Log errors but don't break the stream unless it's fatal
-        console.error(`yt-dlp error: ${data}`);
+        if (errorCaptured.includes('ERROR:')) {
+            console.error(`yt-dlp error: ${data}`);
+        }
     });
 
     ytDlp.on('close', (code) => {
         if (code !== 0) {
-            console.error(`yt-dlp process exited with code ${code}`);
+            console.error(`yt-dlp process exited with code ${code}. Error: ${errorCaptured}`);
+            // If the headers haven't been sent yet, we can send an error
+            if (!res.headersSent) {
+                res.status(500).send('Error processing download');
+            }
         }
     });
 
     req.on('close', () => {
-        ytDlp.kill();
+        if (ytDlp) ytDlp.kill();
     });
 });
 

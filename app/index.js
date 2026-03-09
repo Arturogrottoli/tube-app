@@ -12,7 +12,14 @@ export default function Home() {
   const router = useRouter();
 
   const handleGetInfo = async () => {
-    if (!url) return;
+    if (!url) {
+      Alert.alert('Error', 'Por favor, pega una URL de YouTube.');
+      return;
+    }
+    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
+      Alert.alert('Error', 'La URL no parece ser de YouTube.');
+      return;
+    }
     setLoading(true);
     try {
       const info = await getVideoInfo(url);
@@ -28,7 +35,7 @@ export default function Home() {
     setDownloading(true);
     setProgress(0);
     try {
-      const { fileName } = await downloadFile(url, format, (p) => setProgress(p));
+      const { fileName } = await downloadFile(url, format, videoInfo?.title, (p) => setProgress(p));
       Alert.alert('Éxito', `Descargado: ${fileName}`);
       setVideoInfo(null);
       setUrl('');
