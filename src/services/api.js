@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system';
 
-const BASE_URL = 'http://192.168.1.10:3000'; // Replace with your computer's IP for local testing, or Render URL for production
+const BASE_URL = 'https://tube-backend-unvp.onrender.com'; // Your Render backend URL
 
 export const getVideoInfo = async (url) => {
   try {
