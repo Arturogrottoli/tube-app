@@ -19,6 +19,7 @@ app.get('/info', (req, res) => {
     const ytDlp = spawn('yt-dlp', [
         '--dump-json',
         '--no-playlist',
+        '--js-runtimes', 'node',
         videoUrl
     ]);
 
@@ -72,6 +73,7 @@ app.get('/download', (req, res) => {
     
     const args = [
         '--no-playlist',
+        '--js-runtimes', 'node',
         '-o', '-', // output to stdout
         url
     ];

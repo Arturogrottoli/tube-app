@@ -68,17 +68,14 @@ export default function Home() {
     
     setLoading(true);
     setVideoInfo(null);
-    console.log('[Home] Iniciando búsqueda para:', url);
+    console.log('[Home] Iniciando búsqueda para:', cleanUrl);
 
     try {
-      const info = await getVideoInfo(url);
+      const info = await getVideoInfo(cleanUrl);
       setVideoInfo(info);
     } catch (error) {
       console.error('[Home] Error al obtener info:', error);
-      Alert.alert(
-        'Error de Conexión', 
-        'No se pudo conectar con el servidor. Verifica que estés conectado a internet y que el servidor esté activo.'
-      );
+      Alert.alert('Error', error.message || 'No se pudo conectar con el servidor.');
     } finally {
       setLoading(false);
     }

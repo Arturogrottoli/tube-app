@@ -8,9 +8,9 @@ export const getVideoInfo = async (url) => {
     console.log('Fetching:', infoUrl);
     const response = await fetch(infoUrl);
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Response not OK:', response.status, errorText);
-      throw new Error('Error al obtener info del video');
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Response not OK:', response.status, errorData);
+      throw new Error(errorData.details || errorData.error || 'Error al obtener info del video');
     }
     return await response.json();
   } catch (error) {
