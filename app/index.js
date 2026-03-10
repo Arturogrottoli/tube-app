@@ -16,6 +16,7 @@ import {
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getVideoInfo, downloadFile, BASE_URL } from '../src/services/api';
+import { supabase } from '../src/services/supabase';
 
 const { width } = Dimensions.get('window');
 
@@ -28,21 +29,41 @@ export default function Home() {
   const router = useRouter();
 
   React.useEffect(() => {
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        router.replace('/login');
+      }
+    };
+    checkUser();
+
     console.log('====================================');
-    console.log('[PocketTube] APP INICIADA - VERSIÓN 1.1');
-    console.log('[PocketTube] Backend:', BASE_URL);
+    console.log('[PocketTube] APP INICIADA - VERSIÓN 1.2 Auth');
     console.log('====================================');
   }, []);
 
   const handleGetInfo = async () => {
     console.log('[Home] Botón BUSCAR presionado. URL actual:', url);
     if (!url) {
-      Alert.alert('Error', 'Por favor, pega una URL de YouTube.');
+      Alert.alert('Error', 'Por favor ingresa un link de YouTube');
       return;
     }
-    if (!url.includes('youtube.com') && !url.includes('youtu.be')) {
-      Alert.alert('Error', 'La URL no parece ser de YouTube.');
-      return;
+
+    // Limpiar URL de YouTube (quitar playlists, trackers, etc)
+    let cleanUrl = url;
+    if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
+        try {
+            const urlObj = new URL(url);
+            if (urlObj.hostname.includes('youtube.com')) {
+                const videoId = urlObj.searchParams.get('v');
+                if (videoId) cleanUrl = `https://www.youtube.com/watch?v=${videoId}`;
+            } else if (urlObj.hostname.includes('youtu.be')) {
+                cleanUrl = `https://www.youtube.com/watch?v=${urlObj.pathname.substring(1)}`;
+            }
+            console.log('[Home] URL Limpiada:', cleanUrl);
+        } catch (e) {
+            console.warn('[Home] Error al limpiar URL:', e);
+        }
     }
     
     setLoading(true);
@@ -92,9 +113,15 @@ export default function Home() {
       >
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
           <View style={styles.header}>
+            <TouchableOpacity 
+              style={styles.profileBtn}
+              onPress={() => router.push('/profile')}
+            >
+              <Text style={{fontSize: 20}}>👤</Text>
+            </TouchableOpacity>
             <Text style={styles.branding}>Pocket<Text style={{color: '#FF0000'}}>Tube</Text></Text>
             <Text style={styles.subtitle}>Descarga tu contenido favorito</Text>
-            <Text style={{color: '#444', fontSize: 10, marginTop: 5}}>v1.1 Debug Mode</Text>
+            <Text style={{color: '#444', fontSize: 10, marginTop: 5}}>v1.2 Auth Active</Text>
           </View>
 
           <View style={styles.inputWrapper}>
@@ -184,6 +211,19 @@ const styles = StyleSheet.create({
   header: { marginTop: 60, marginBottom: 30, alignItems: 'center' },
   branding: { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: -1 },
   subtitle: { color: '#888', fontSize: 14, marginTop: 5 },
+  profileBtn: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
   inputWrapper: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.05)',

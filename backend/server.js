@@ -36,7 +36,10 @@ app.get('/info', (req, res) => {
     ytDlp.on('close', (code) => {
         if (code !== 0) {
             console.error(`yt-dlp exited with code ${code}: ${errorOutput}`);
-            return res.status(500).json({ error: 'Failed to fetch video info' });
+            return res.status(500).json({ 
+                error: 'Failed to fetch video info', 
+                details: errorOutput.split('\n')[0] // Send the first line of error to the client
+            });
         }
 
         try {

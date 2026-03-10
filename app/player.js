@@ -4,6 +4,7 @@ import { Video } from 'expo-av';
 import { useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
+import Slider from '@react-native-community/slider';
 
 const { width } = Dimensions.get('window');
 
@@ -12,6 +13,33 @@ export default function Player() {
   const fileUri = FileSystem.documentDirectory + fileName;
   const isAudio = fileName.endsWith('.mp3');
   const [status, setStatus] = useState({});
+  const videoRef = React.useRef(null);
+  
+  // Progress states
+  const [position, setPosition] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const onPlaybackStatusUpdate = (status) => {
+    setStatus(status);
+    if (status.isLoaded) {
+      setPosition(status.positionMillis);
+      setDuration(status.durationMillis || 0);
+    }
+  };
+
+  const formatTime = (millis) => {
+    if (!millis) return '0:00';
+    const totalSeconds = millis / 1000;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  const handleSlidingComplete = async (value) => {
+    if (videoRef.current) {
+      await videoRef.current.setStatusAsync({ positionMillis: value });
+    }
+  };
 
   return (
     <LinearGradient colors={['#1a1a1a', '#0a0a0a']} style={styles.container}>
@@ -29,19 +57,38 @@ export default function Player() {
              </Text>
              <Text style={styles.subtitle}>Reproduciendo Audio</Text>
              
+             <View style={styles.sliderContainer}>
+               <Slider
+                 style={styles.slider}
+                 minimumValue={0}
+                 maximumValue={duration}
+                 value={position}
+                 minimumTrackTintColor="#FF0000"
+                 maximumTrackTintColor="rgba(255,255,255,0.1)"
+                 thumbTintColor="#FF0000"
+                 onSlidingComplete={handleSlidingComplete}
+               />
+               <View style={styles.timeRow}>
+                 <Text style={styles.timeText}>{formatTime(position)}</Text>
+                 <Text style={styles.timeText}>{formatTime(duration)}</Text>
+               </View>
+             </View>
+
              <Video
+              ref={videoRef}
               source={{ uri: fileUri }}
               useNativeControls
               resizeMode="contain"
               shouldPlay
               style={styles.hiddenVideo} 
-              onPlaybackStatusUpdate={status => setStatus(() => status)}
+              onPlaybackStatusUpdate={onPlaybackStatusUpdate}
             />
           </View>
         ) : (
           <View style={styles.videoCard}>
             <View style={styles.videoWrapper}>
               <Video
+                ref={videoRef}
                 source={{ uri: fileUri }}
                 rate={1.0}
                 volume={1.0}
@@ -50,7 +97,7 @@ export default function Player() {
                 shouldPlay
                 useNativeControls
                 style={styles.video}
-                onPlaybackStatusUpdate={status => setStatus(() => status)}
+                onPlaybackStatusUpdate={onPlaybackStatusUpdate}
               />
             </View>
             <View style={styles.videoInfo}>
@@ -58,6 +105,23 @@ export default function Player() {
                 {fileName.replace('PocketTube_', '').replace('.mp4', '')}
               </Text>
               <Text style={styles.subtitle}>Reproduciendo Video</Text>
+              
+              <View style={styles.sliderContainer}>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={duration}
+                  value={position}
+                  minimumTrackTintColor="#FF0000"
+                  maximumTrackTintColor="rgba(255,255,255,0.1)"
+                  thumbTintColor="#FF0000"
+                  onSlidingComplete={handleSlidingComplete}
+                />
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeText}>{formatTime(position)}</Text>
+                  <Text style={styles.timeText}>{formatTime(duration)}</Text>
+                </View>
+              </View>
             </View>
           </View>
         )}
@@ -107,7 +171,16 @@ const styles = StyleSheet.create({
     textAlign: 'center' 
   },
   subtitle: { color: '#FF0000', fontSize: 14, fontWeight: '600', marginBottom: 30 },
-  videoInfo: { marginTop: 30, alignItems: 'center' },
+  videoInfo: { marginTop: 30, alignItems: 'center', width: '100%' },
   video: { width: '100%', height: '100%' },
-  hiddenVideo: { width: '100%', height: 45, marginTop: 20 }, 
+  hiddenVideo: { width: '100%', height: 45, marginTop: 20 },
+  sliderContainer: { width: '100%', marginTop: 10 },
+  slider: { width: '100%', height: 40 },
+  timeRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    paddingHorizontal: 5,
+    marginTop: -10
+  },
+  timeText: { color: '#888', fontSize: 12 },
 });
