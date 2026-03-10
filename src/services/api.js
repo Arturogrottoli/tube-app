@@ -1,14 +1,20 @@
 import * as FileSystem from 'expo-file-system';
 
-const BASE_URL = 'https://tube-backend-unvp.onrender.com'; // Your Render backend URL
+export const BASE_URL = 'https://tube-backend-unvp.onrender.com'; // Your Render backend URL
 
 export const getVideoInfo = async (url) => {
   try {
-    const response = await fetch(`${BASE_URL}/info?url=${encodeURIComponent(url)}`);
-    if (!response.ok) throw new Error('Error al obtener info del video');
+    const infoUrl = `${BASE_URL}/info?url=${encodeURIComponent(url)}`;
+    console.log('Fetching:', infoUrl);
+    const response = await fetch(infoUrl);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Response not OK:', response.status, errorText);
+      throw new Error('Error al obtener info del video');
+    }
     return await response.json();
   } catch (error) {
-    console.error(error);
+    console.error('Fetch error:', error);
     throw error;
   }
 };
