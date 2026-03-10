@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,14 +18,22 @@ app.get('/info', (req, res) => {
         return res.status(400).json({ error: 'URL is required' });
     }
 
-    const ytDlp = spawn('yt-dlp', [
+    const cookiesPath = path.join(__dirname, 'cookies.txt');
+    const args = [
         '--dump-json',
         '--no-playlist',
         '--js-runtimes', 'node',
         '--no-warnings',
         '--extractor-args', 'youtube:player-client=web,ios',
         videoUrl
-    ]);
+    ];
+
+    if (fs.existsSync(cookiesPath)) {
+        args.unshift('--cookies', cookiesPath);
+    }
+
+    const ytDlp = spawn('yt-dlp', args);
+
 
     let output = '';
     let errorOutput = '';
@@ -78,6 +88,7 @@ app.get('/download', (req, res) => {
         .replace(/[^\w\s-]/gi, '') // Remove special characters
         .trim();
     
+    const cookiesPath = path.join(__dirname, 'cookies.txt');
     const args = [
         '--no-playlist',
         '--js-runtimes', 'node',
@@ -87,6 +98,10 @@ app.get('/download', (req, res) => {
         url
     ];
 
+    if (fs.existsSync(cookiesPath)) {
+        args.unshift('--cookies', cookiesPath);
+    }
+
     if (isAudio) {
         args.push('-x', '--audio-format', 'mp3');
     } else {
@@ -94,6 +109,7 @@ app.get('/download', (req, res) => {
     }
 
     const ytDlp = spawn('yt-dlp', args);
+
 
     // Set headers
     res.setHeader('Content-Disposition', `attachment; filename="${safeTitle}.${extension}"`);
