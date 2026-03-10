@@ -20,6 +20,8 @@ app.get('/info', (req, res) => {
         '--dump-json',
         '--no-playlist',
         '--js-runtimes', 'node',
+        '--no-warnings',
+        '--extractor-args', 'youtube:player-client=web,ios',
         videoUrl
     ]);
 
@@ -35,11 +37,16 @@ app.get('/info', (req, res) => {
     });
 
     ytDlp.on('close', (code) => {
-        if (code !== 0) {
+        if (code !== 0 && !output) { // Only error if no output AND non-zero code
             console.error(`yt-dlp exited with code ${code}: ${errorOutput}`);
+            
+            // Extract the actual ERROR line if possible
+            const errorMatch = errorOutput.match(/ERROR: (.*)/);
+            const actualError = errorMatch ? errorMatch[1] : errorOutput.split('\n')[0];
+
             return res.status(500).json({ 
                 error: 'Failed to fetch video info', 
-                details: errorOutput.split('\n')[0] // Send the first line of error to the client
+                details: actualError 
             });
         }
 
@@ -74,6 +81,8 @@ app.get('/download', (req, res) => {
     const args = [
         '--no-playlist',
         '--js-runtimes', 'node',
+        '--no-warnings',
+        '--extractor-args', 'youtube:player-client=web,ios',
         '-o', '-', // output to stdout
         url
     ];
