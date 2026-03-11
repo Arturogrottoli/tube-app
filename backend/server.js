@@ -19,6 +19,8 @@ app.get('/info', (req, res) => {
     }
 
     const cookiesPath = path.join(__dirname, 'cookies.txt');
+    const isDev = process.env.NODE_ENV === 'development';
+
     const args = [
         '--dump-json',
         '--no-playlist',
@@ -30,6 +32,9 @@ app.get('/info', (req, res) => {
 
     if (fs.existsSync(cookiesPath)) {
         args.unshift('--cookies', cookiesPath);
+    } else if (isDev) {
+        // En local, intentar usar las cookies de Chrome para evitar bloqueos
+        args.unshift('--cookies-from-browser', 'chrome');
     }
 
     const ytDlp = spawn('yt-dlp', args);
@@ -47,15 +52,19 @@ app.get('/info', (req, res) => {
     });
 
     ytDlp.on('close', (code) => {
-        if (code !== 0 && !output) { // Only error if no output AND non-zero code
+        if (code !== 0 && !output) {
             console.error(`yt-dlp exited with code ${code}: ${errorOutput}`);
             
-            // Extract the actual ERROR line if possible
-            const errorMatch = errorOutput.match(/ERROR: (.*)/);
-            const actualError = errorMatch ? errorMatch[1] : errorOutput.split('\n')[0];
+            let actualError = 'Failed to fetch video info';
+            if (errorOutput.includes('Sign in to confirm you\'re not a bot')) {
+                actualError = 'YouTube bloqueó la petición (bot detectado). Verifica las cookies.';
+            } else {
+                const errorMatch = errorOutput.match(/ERROR: (.*)/);
+                actualError = errorMatch ? errorMatch[1] : errorOutput.split('\n')[0];
+            }
 
             return res.status(500).json({ 
-                error: 'Failed to fetch video info', 
+                error: 'Error de yt-dlp', 
                 details: actualError 
             });
         }
@@ -89,6 +98,8 @@ app.get('/download', (req, res) => {
         .trim();
     
     const cookiesPath = path.join(__dirname, 'cookies.txt');
+    const isDev = process.env.NODE_ENV === 'development';
+
     const args = [
         '--no-playlist',
         '--js-runtimes', 'node',
@@ -100,6 +111,8 @@ app.get('/download', (req, res) => {
 
     if (fs.existsSync(cookiesPath)) {
         args.unshift('--cookies', cookiesPath);
+    } else if (isDev) {
+        args.unshift('--cookies-from-browser', 'chrome');
     }
 
     if (isAudio) {
